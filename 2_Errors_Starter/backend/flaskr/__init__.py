@@ -131,7 +131,29 @@ def create_app(test_config=None):
     #        Pay special attention to the status codes used in the aborts since those are relevant for this task!
 
     # @TODO: Write error handler decorators to handle AT LEAST status codes 400, 404, and 422.
+    @app.errorhandler(400) #takes the status code as an argument
+    def bad_request(error):#naming of function handler
+    	return jsonify({# consistent formatting and messaging of the JSON object response
+    		"success": False,
+    		"error": 400,
+    		"message": "bad request"
+    	}), 400
 
+    @app.errorhandler(404) #takes the status code as an argument
+    def not_found(error):#naming of function handler
+    	return jsonify({# consistent formatting and messaging of the JSON object response
+    		"success": False,
+    		"error": 404,
+    		"message": "resource not found"
+    	}), 404
+
+    @app.errorhandler(422) #takes the status code as an argument
+    def unprocessable(error):#naming of function handler
+    	return jsonify({# consistent formatting and messaging of the JSON object response
+    		"success": False,
+    		"error": 422,
+    		"message": "unprocessable"
+    	}), 422
     # TEST: Practice writing curl requests. Write some requests that you know will error in expected ways.
     #       Make sure they are returning as expected. Do the same for other misformatted requests or requests missing data.
     #       If you find any error responses returning as HTML, write new error handlers for them.
