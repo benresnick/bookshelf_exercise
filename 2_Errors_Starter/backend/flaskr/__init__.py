@@ -147,6 +147,14 @@ def create_app(test_config=None):
     		"message": "resource not found"
     	}), 404
 
+    @app.errorhandler(405) #takes the status code as an argument
+    def not_found(error):#naming of function handler
+    	return jsonify({# consistent formatting and messaging of the JSON object response
+    		"success": False,
+    		"error": 405,
+    		"message": "method not allowed"
+    	}), 405
+
     @app.errorhandler(422) #takes the status code as an argument
     def unprocessable(error):#naming of function handler
     	return jsonify({# consistent formatting and messaging of the JSON object response
