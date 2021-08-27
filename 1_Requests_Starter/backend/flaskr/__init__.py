@@ -8,6 +8,14 @@ from models import setup_db, Book
 
 BOOKS_PER_SHELF = 8
 
+def paginate_books(request, books):
+    page = request.args.get('page', 1, type=int)
+    start = (page - 1) * BOOKS_PER_SHELF
+    end = start + BOOKS_PER_SHELF
+    formatted_books = [book.format() for book in books]
+    current_books = formatted_books[start:end]
+    return current_books
+
 # @TODO: General Instructions
 #   - As you're creating endpoints, define them and then search for 'TODO' within the frontend to update the endpoints there.
 #     If you do not update the endpoints, the lab will not work - of no fault of your API code!
@@ -32,34 +40,66 @@ def create_app(test_config=None):
         )
         return response
 
-    @app.route('/books')
-    def get_books():
-        page = request.args.get('page', 1, type=int)
-        start = (page - 1) * BOOKS_PER_SHELF
-        end = start + BOOKS_PER_SHELF
-        books = Book.query.all()
-        formatted_books = [book.format() for book in books]
-        return jsonify({
-            'success':True,
-            'books': formatted_books[start:end],
-            'total_books': len(formatted_books)
-        })
     # @TODO: Write a route that retrivies all books, paginated.
     #         You can use the constant above to paginate by eight books.
     #         If you decide to change the number of books per page,
     #         update the frontend to handle additional books in the styling and pagination
     #         Response body keys: 'success', 'books' and 'total_books'
+    @app.route('/books')
+    def get_books():
+        books = Book.query.order_by(Book.id).all()
+        current_books = paginate_books(request, books)
+        if len(current_books) == 0:
+            abort(404)
+        else:
+            return jsonify({
+                'success':True,
+                'books': current_books,
+                'total_books': len(Book.query.all())
+            })
     # TEST: When completed, the webpage will display books including title, author, and rating shown as stars
 
     # @TODO: Write a route that will update a single book's rating.
     #         It should only be able to update the rating, not the entire representation
     #         and should follow API design principles regarding method and route.
     #         Response body keys: 'success'
+    @app.route('/books/<book_id>', methods=['PATCH'])
+    def update_rating(book_id):
+        body = request.get_json()
+        try:
+            book = Book.query.filter(Book.id==book_id).one_or_none()
+            if book is None:
+                abort(404)
+            if 'rating' in body:
+                book.rating = int(body.get('rating'))
+                book.update()
+                return jsonify({
+                    'success': True,
+                    'id': book_id
+                })
+        except:
+            abort(400)
     # TEST: When completed, you will be able to click on stars to update a book's rating and it will persist after refresh
 
     # @TODO: Write a route that will delete a single book.
     #        Response body keys: 'success', 'deleted'(id of deleted book), 'books' and 'total_books'
     #        Response body keys: 'success', 'books' and 'total_books'
+    @app.route('/books/<book_id>', methods=['DELETE'])
+    def delete_book(book_id):
+        try:
+            book = Book.query.filter(Book.id==book_id).one_or_none()
+            if book is None:
+                abort(404)
+            book.delete()
+            return jsonify({
+                 'success': True,
+                 'deleted': book_id,
+                 'books' : paginate_books(request, Book.query.order_by(Book.id).all()),
+                 'total_books':len(Book.query.all())
+             })
+        except:
+            abort(422)
+
 
     # TEST: When completed, you will be able to delete a single book by clicking on the trashcan.
 
